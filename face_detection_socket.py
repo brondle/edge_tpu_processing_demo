@@ -69,12 +69,12 @@ def main():
                 print('Could not read image')
                 continue
 
-            width, height = image.size
-            print('w/h', width, height)
-            inputTensor = np.frombuffer(image.tobytes(), dtype=np.uint8)
+            # inputTensor = np.frombuffer(image.tobytes(), dtype=np.uint8)
 
-            results = engine.DetectWithInputTensor(inputTensor, threshold=0.25,
-                                                   top_k=10)
+            results = engine.DetectWithImage(
+                image, threshold=0.25, keep_aspect_ratio=True, relative_coord=False, top_k=3)
+            # results = engine.DetectWithInputTensor(inputTensor, threshold=0.25,
+            #                                        top_k=10)
 
             print('time to process image', (time.time() - start_s) * 1000)
 
