@@ -45,7 +45,7 @@ def main():
     
     print('input dims', width, height)
     camera.start_preview(fullscreen=False, window=(700, 200, FULL_SIZE_W,FULL_SIZE_H))
-    #  camera.start_preview()
+    camera.start_preview()
 
     # rasberry pi requires images to be resizes to multiples of 32x16
     camera_multiple = (16, 32)

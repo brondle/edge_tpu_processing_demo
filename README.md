@@ -34,29 +34,23 @@ https://pi.processing.org/tutorial/camera/#gl-video-library-installation-and-set
 If you haven't already, **follow the instructions to Setup the Edge TPU runtime and Python Library:**
 https://coral.withgoogle.com/tutorials/accelerator/, in particular the steps:
 
-    wget http://storage.googleapis.com/cloud-iot-edge-pretrained-models/edgetpu_api.tar.gz
+    wget https://dl.google.com/coral/edgetpu_api/edgetpu_api_latest.tar.gz -O edgetpu_api.tar.gz --trust-server-names
 
     tar xzf edgetpu_api.tar.gz
 
-    cd python-tflite-source
+    cd edgetpu_api
 
     bash ./install.sh
 
-**The files in this repository must be located within a folder inside of 'python-tflite-source/edgetpu':**
-
-    cd python-tflite-source/edgetpu
-
-    git clone git@github.com:oveddan/edge_tpu_processing_demo.git
-
-By following the above steps, there should be a directory `python-tflite-source/edgetpu/edge_tpu_processing_demo`
+**This repository should be checked out in a folder adjacent to 'edgetpu_api'.**
 
 ## Usage
 
-**All of the below code should be run from within the directory `python-tflite-source/edgetpu/edge_tpu_processing_demo`**
+**All of the below code should be run from within the root directory of this repo**
 
 To run everything in python, including camera capture and drawing the results:
 
-    python3 object_detection_camera.py --model ../test_data/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite --label ../test_data/coco_labels.txt
+    python3 object_detection_camera.py --model ./test_data/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite --label ./test_data/coco_labels.txt
 
 For convenience sake, the above can be run with `./coco_detect.sh`
 
