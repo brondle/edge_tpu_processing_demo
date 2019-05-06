@@ -18,9 +18,7 @@ class BroadcastThread extends Thread {
   boolean newFrame = false;
   boolean running;
 
-  // 0 means disabled
-  int cropX = 0;
-  int cropY = 0;
+  float[] cropBox;
 
   BroadcastThread() {
     //println("Host and port:", host, port);
@@ -44,8 +42,8 @@ class BroadcastThread extends Thread {
         broadcastFullImage(lastImage);
       }
 
-      if (cropX != 0 && cropY != 0) {
-        broadcastImageCrop(lastImage, cropX, cropY);
+      if (cropBox != null) {
+        broadcastImageCrop(lastImage);
       }
     }
   }
@@ -56,13 +54,11 @@ class BroadcastThread extends Thread {
   }
 
   void disableCropToBroadcast() {
-    cropX = 0;
-    cropY = 0;
+    cropBox = null;
   }
 
-  void setCropToBroadcast(int x, int y) {
-    cropX = x;
-    cropY = y;
+  void setCropToBroadcast(float[] box) {
+    cropBox = box;
   }
 
   // Function to broadcast a PImage over UDP
@@ -104,14 +100,21 @@ class BroadcastThread extends Thread {
 
   }
 
-  void broadcastImageCrop(PImage img, int x, int y) {
+  void broadcastImageCrop(PImage img) {
     // image classification model has a fixed size
     int IMG_SIZE = 224;
 
     BufferedImage bimg = new BufferedImage(IMG_SIZE, IMG_SIZE, BufferedImage.TYPE_INT_RGB);
     img.loadPixels();
-    PImage croppedImg = img.get(x, y, IMG_SIZE, IMG_SIZE);
+
+    int x = Math.round(box[0]);
+    int y = Math.round(box[1]);
+    int w = Math.round(box[2]) - x;
+    int h = Math.round(box[3]) - y;
+
+    PImage croppedImg = img.get(x, y, w, h);
     croppedImg.loadPixels();
+    croppedImg.resize(IMG_SIZE, IMG_SIZE);
 
     bimg.setRGB(0, 0, IMG_SIZE, IMG_SIZE, croppedImg.pixels, 0, IMG_SIZE);
     byte[] packet = createImageBytePacket(bimg);

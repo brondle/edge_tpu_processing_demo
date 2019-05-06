@@ -105,8 +105,9 @@ void updateResultsImage() {
 
     resultsImage.rect(x1, y1, x2 - x1, y2 - y1);
 
-    if (label != null)
+    if (label != null) {
       resultsImage.text(label, x1, y1);
+    }
   }
 
   resultsImage.endDraw();
@@ -131,7 +132,7 @@ void draw() {
       updateResultsImage();
       float[][] boxes = receiverThread.getBoxes();
       if (boxes.length > 0) {
-        broadcastThread.setCropToBroadcast(Math.round(boxes[0][0]), Math.round(boxes[0][1]));
+        broadcastThread.setCropToBroadcast(boxes[0]);
       } else {
         broadcastThread.disableCropToBroadcast();
       }

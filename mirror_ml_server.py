@@ -102,6 +102,7 @@ def classify_face(engine, sendSocket):
                 continue
 
             logger.info('CLASSIFYING')
+            image.save('crop', 'JPEG')
             # see https://coral.withgoogle.com/docs/reference/edgetpu.classification.engine/
             results = engine.ClassifyWithImage(
                 image, threshold=0.75, top_k=3)
@@ -110,12 +111,24 @@ def classify_face(engine, sendSocket):
                          (time.time() - start_s) * 1000)
 
             if (len(results) > 0):
-                output = list(
-                    map(lambda result: face_class_label_ids_to_names[result[0]], results))
-                logger.info(output)
+                logger.info(results)
 
-                message = json.dumps({'classification': output})
-                sendSocket = send_with_retry(sendSocket, message)
+                # sort by confidence, take the highest, return the label
+                highest_confidence_label_id = sorted(
+                    results, key=lambda result: result[1], reverse=True)[0][0]
+
+                try:
+
+                    # output = list(
+                    #     map(lambda result: face_class_label_ids_to_names[result[0]], results))
+
+                    message = json.dumps({
+                        'classification': face_class_label_ids_to_names[highest_confidence_label_id]
+                    })
+                    sendSocket = send_with_retry(sendSocket, message)
+                except KeyError:
+                    logger.error(
+                        'classified label "%d" not recognized' % highest_confidence_label_id)
             else:
                 logger.debug('could not classify image')
 

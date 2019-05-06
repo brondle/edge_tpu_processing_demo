@@ -49,7 +49,7 @@ class ResultsReceivingThread extends Thread {
 
   void parseResults(JSONObject resultsJson) {
     JSONArray detections = resultsJson.getJSONArray("detection");
-    JSONArray classification = resultsJson.getJSONArray("classification");
+    String classification = resultsJson.getString("classification");
 
     numDetections = 0;
 
@@ -70,9 +70,9 @@ class ResultsReceivingThread extends Thread {
       }
     }
 
-    if (classification != null && classification.size() > 0) {
-      faceClassification = classification.getString(0);
-      println("got classification! face recognized as: " + faceClassification);
+    if (classification != null && classification != "") {
+      // faceClassification = classification.getString(0);
+      println("got classification! face recognized as: " + classification);
     }
   }
 
