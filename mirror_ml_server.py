@@ -57,7 +57,7 @@ def detect_face(engine, sendSocket):
     logger.info('listening on %d ...' % DETECTION_RECEIVE_PORT)
 
     while 1:
-        logger.info('waiting for packet')
+        logger.debug('waiting for packet')
         data, _ = receiveSocket.recvfrom(DETECTION_IMAGE_BUFFER_SIZE)
 
         if (len(data) > 0):
@@ -106,7 +106,7 @@ def classify_face(engine, sendSocket):
             results = engine.ClassifyWithImage(
                 image, threshold=0.75, top_k=3)
 
-            logger.debug(results)
+            logger.info(results)
             logger.debug('time to classify face: %d\n' %
                          (time.time() - start_s) * 1000)
             output = dict(map(lambda result:
@@ -155,7 +155,7 @@ def start_server():
 if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     consoleHandler = logging.StreamHandler()
-    consoleHandler.setLevel(logging.DEBUG)
+    consoleHandler.setLevel(logging.INFO)
     consoleHandler.setFormatter(logging.Formatter(
         '%(asctime)s - %(levelname)s - %(message)s'))
     logger.addHandler(consoleHandler)

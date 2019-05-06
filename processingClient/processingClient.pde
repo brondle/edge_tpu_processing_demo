@@ -34,8 +34,7 @@ int paddingH = (inputH - resizeH) / 2;
 
 int defaultFps = 25;
 
-BroadcastThread pythonBroadcastThread;
-BroadcastThread remoteBroadcastThread;
+BroadcastThread broadcastThread;
 ResultsReceivingThread receiverThread;
 
 
@@ -47,10 +46,10 @@ void setup() {
   inputImage = createGraphics(inputW, inputH, P2D);
   resultsImage = createGraphics(outputW, outputH, P2D);
   frameRate(getFps());
-  
+
   // start threads
-  pythonBroadcastThread = new BroadcastThread();
-  pythonBroadcastThread.start();
+  broadcastThread = new BroadcastThread();
+  broadcastThread.start();
   println("Opening TCP connection");
   receiverThread = new ResultsReceivingThread(this);
   receiverThread.start();
@@ -59,7 +58,7 @@ void setup() {
   String[] devices = GLCapture.list();
   println("Available cameras:");
   printArray(devices);
-  
+
   // use the first camera
   video = new GLCapture(this, devices[0], captureW, captureH, getFps());
 
@@ -84,32 +83,32 @@ void updateResultsImage() {
   int numDetections = receiverThread.getNumDetections();
   float[][] boxes = receiverThread.getBoxes();
   String[] labels = receiverThread.getLabels();
-  
+
   resultsImage.beginDraw();
   resultsImage.clear();
   resultsImage.noFill();
   resultsImage.stroke(#ff0000);
   resultsImage.strokeWeight(2);
   resultsImage.textSize(18);
-  
+
   for(int i = 0; i < numDetections; i++) {
-    float[] box = boxes[i]; 
-      
+    float[] box = boxes[i];
+
     float scaleWH = captureW * 1.0 / inputW;
-    
+
     float x1 = padAndScale(box[0], paddingW, scaleWH);
     float y1 = padAndScale(box[1], paddingH, scaleWH);
     float x2 = padAndScale(box[2], paddingW, scaleWH);
     float y2 = padAndScale(box[3], paddingH, scaleWH);
-    
+
     String label = labels[i];
-    
+
     resultsImage.rect(x1, y1, x2 - x1, y2 - y1);
-    
+
     if (label != null)
       resultsImage.text(label, x1, y1);
   }
-  
+
   resultsImage.endDraw();
 }
 
@@ -118,17 +117,24 @@ void draw() {
   // If the camera is sending new data, capture that data
   if (video.available()) {
     video.read();
-    pythonBroadcastThread.update(captureAndScaleInputImage());
+    broadcastThread.update(captureAndScaleInputImage());
   }
-  
-  if (debugInputImage)
+
+  if (debugInputImage) {
     image(inputImage, 0, 0, inputW, inputH);
-  
+  }
+
   if (drawResults) {
     // Copy pixels into a PImage object and show on the screen
-    image(video, 0, 0, outputW, outputH);  
+    image(video, 0, 0, outputW, outputH);
     if (receiverThread.newResultsAvailable()) {
       updateResultsImage();
+      float[][] boxes = receiverThread.getBoxes();
+      if (boxes.length > 0) {
+        broadcastThread.setCropToBroadcast(Math.round(boxes[0][0]), Math.round(boxes[0][1]));
+      } else {
+        broadcastThread.disableCropToBroadcast();
+      }
     }
     image(resultsImage, 0, 0, outputW, outputH);
   }
@@ -136,7 +142,7 @@ void draw() {
 
 int getFps() {
   String fpsString = System.getenv("FPS");
-  
+
   if (fpsString != null) {
     return int(fpsString);
   } else

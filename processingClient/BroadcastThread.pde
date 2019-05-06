@@ -18,6 +18,9 @@ class BroadcastThread extends Thread {
   boolean newFrame = false;
   boolean running;
 
+  int cropX;
+  int cropY;
+
   BroadcastThread() {
     //println("Host and port:", host, port);
     // Setting up the DatagramSocket, requires try/catch
@@ -39,12 +42,26 @@ class BroadcastThread extends Thread {
       if (newFrame) {
         broadcastFullImage(lastImage);
       }
+
+      if (cropX != null && cropY != null) {
+        broadcastImageCrop(lastImage, cropX, cropY);
+      }
     }
   }
 
   void update(PImage img) {
     lastImage = img;
     newFrame = true;
+  }
+
+  void disableCropToBroadcast() {
+    cropX = null;
+    cropY = null;
+  }
+
+  void setCropToBroadcast(int x, int y) {
+    cropX = x;
+    cropY = y;
   }
 
   // Function to broadcast a PImage over UDP

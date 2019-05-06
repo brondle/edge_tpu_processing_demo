@@ -19,6 +19,7 @@ class ResultsReceivingThread extends Thread {
   float[][] boxes = new float[MAX_DETECTED_OBJECTS][4];
   String[] labels = new String[MAX_DETECTED_OBJECTS];
   int numDetections = 0;
+  String faceClassification;
 
   ResultsReceivingThread(PApplet parent) {
     // create new tcp client
@@ -71,7 +72,8 @@ class ResultsReceivingThread extends Thread {
 
     if (classification != null) {
       println("got classification!");
-      println(classification.getJSONArray(0).getString(0));
+      faceClassification = classification.getJSONArray(0).getString(0);
+      println(faceClassification);
     }
   }
 
@@ -92,16 +94,20 @@ class ResultsReceivingThread extends Thread {
     }
   }
 
-  int getNumDetections(){
+  int getNumDetections() {
     available = false;
     return numDetections;
   }
 
-  float[][] getBoxes(){
+  float[][] getBoxes() {
     return boxes;
   }
 
-  String[] getLabels(){
+  String[] getLabels() {
     return labels;
+  }
+
+  String getClassification() {
+    return faceClassification;
   }
 }
