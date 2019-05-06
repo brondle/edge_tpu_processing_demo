@@ -1,7 +1,10 @@
+#!/usr/bin/env python
+
 import argparse
 import platform
 import subprocess
 import io
+import logging
 import json
 import numpy as np
 import socket
@@ -14,7 +17,8 @@ from threading import Thread
 
 
 UDP_IP = '127.0.0.1'
-TCP_IP = '10.0.0.1'
+# TCP_IP = '10.0.0.1'
+TCP_IP = UDP_IP
 
 DETECTION_RECEIVE_PORT = 9100
 CLASSIFICATION_RECEIVE_PORT = 9101
@@ -29,17 +33,19 @@ face_class_label_ids_to_names = {
     2: 'unknown'
 }
 
+logger = logging.getLogger(__name__)
+
 
 def send_with_retry(sendSocket, message):
-    #  print('sending', message)
+    #  logger.info('sending', message)
     try:
         sendSocket.send(message.encode('utf-8'))
         # TODO: switch to UDP
         #  receiveSocket.sendto(message.encode('utf-8'), addr)
         #  senderSocket.sendto(message.encode('utf-8'), (UDP_IP, UDP_SEND_PORT))
     except ConnectionResetError:
-        print('Socket disconnected...waiting for client')
-        sendSocket, _ = sendSocket.accept()
+        logger.info('Socket disconnected...waiting for client')
+        sendSocket, addr = sendSocket.accept()
 
     return sendSocket
 
@@ -48,10 +54,10 @@ def detect_face(engine, sendSocket):
     receiveSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     receiveSocket.bind((UDP_IP, DETECTION_RECEIVE_PORT))
 
-    print('listening on %d ...' % DETECTION_RECEIVE_PORT)
+    logger.info('listening on %d ...' % DETECTION_RECEIVE_PORT)
 
-    while True:
-        print('waiting for packet')
+    while 1:
+        logger.info('waiting for packet')
         data, _ = receiveSocket.recvfrom(DETECTION_IMAGE_BUFFER_SIZE)
 
         if (len(data) > 0):
@@ -60,14 +66,15 @@ def detect_face(engine, sendSocket):
             try:
                 image = Image.open(io.BytesIO(data)).convert('RGB')
             except OSError:
-                print('Could not read image')
+                logger.info('Could not read image')
                 continue
 
             # see https://coral.withgoogle.com/docs/reference/edgetpu.detection.engine/
             results = engine.DetectWithImage(
                 image, threshold=0.25, keep_aspect_ratio=True, relative_coord=False, top_k=3)
 
-            print('time to detect faces', (time.time() - start_s) * 1000)
+            logger.debug('time to detect faces: %d\n' %
+                         (time.time() - start_s) * 1000)
 
             output = list(map(lambda result:
                               {'box': result.bounding_box.flatten().tolist()}, results))
@@ -80,8 +87,8 @@ def classify_face(engine, sendSocket):
     receiveSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     receiveSocket.bind((UDP_IP, CLASSIFICATION_RECEIVE_PORT))
 
-    while True:
-        print('waiting for packet')
+    while 1:
+        logger.info('waiting for packet')
         data, _ = receiveSocket.recvfrom(66507)
 
         if (len(data) > 0):
@@ -90,14 +97,15 @@ def classify_face(engine, sendSocket):
             try:
                 image = Image.open(io.BytesIO(data)).convert('RGB')
             except OSError:
-                print('could not read image')
+                logger.info('could not read image')
                 continue
 
             # see https://coral.withgoogle.com/docs/reference/edgetpu.classification.engine/
             results = engine.ClassifyWithImage(
                 image, threshold=0.75, top_k=3)
 
-            print('time to classify face', (time.time() - start_s) * 1000)
+            logger.debug('time to classify face: %d\n' %
+                         (time.time() - start_s) * 1000)
             output = dict(map(lambda result:
                               (face_class_label_ids_to_names[result[0]], result[1]), results))
 
@@ -105,7 +113,7 @@ def classify_face(engine, sendSocket):
             sendSocket = send_with_retry(sendSocket, message)
 
 
-def main():
+def start_server():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--detection_model', help='Path to the face detection model.', required=True)
@@ -113,7 +121,7 @@ def main():
         '--recognition_model', help='Path to the face recognition (image classification) model.', required=True)
     args = parser.parse_args()
 
-    sendSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sendSocketRaw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # TODO: switch to UDP
     # sendSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -121,21 +129,33 @@ def main():
     detectionEngine = DetectionEngine(args.detection_model)
     recognitionEngine = ClassificationEngine(args.recognition_model)
 
+    logger.info('listening for ML requests on %d ...' % DETECTION_RECEIVE_PORT)
+
+    sendSocketRaw.bind((TCP_IP, SEND_SOCKET_PORT))
+    sendSocketRaw.listen(1)
+    logger.info('waiting for client to connect...')
+    sendSocket, addr = sendSocketRaw.accept()
+    # TODO: switch to UDP
+    # sendSocket.bind((UDP_IP, UDP_SEND_PORT))
+
+    # at this point, we know the processing client has opened the TCP socket
+    logger.info('processing client connected')
     detectionThread = Thread(
         target=detect_face, args=(detectionEngine, sendSocket))
     recognitionThread = Thread(
         target=classify_face, args=(recognitionEngine, sendSocket))
 
-    sendSocket.bind((TCP_IP, SEND_SOCKET_PORT))
-    sendSocket.listen(1)
-    sendSocket, _ = sendSocket.accept()
-    # TODO: switch to UDP
-    # sendSocket.bind((UDP_IP, UDP_SEND_PORT))
-
     detectionThread.start()
     recognitionThread.start()
-    print('waiting for detection and classification client(s)')
 
 
 if __name__ == '__main__':
-    main()
+    logger.setLevel(logging.DEBUG)
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setLevel(logging.INFO)
+    consoleHandler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(consoleHandler)
+
+    logger.info('running server as main')
+    start_server()
