@@ -18,8 +18,9 @@ class BroadcastThread extends Thread {
   boolean newFrame = false;
   boolean running;
 
-  int cropX;
-  int cropY;
+  // 0 means disabled
+  int cropX = 0;
+  int cropY = 0;
 
   BroadcastThread() {
     //println("Host and port:", host, port);
@@ -43,7 +44,7 @@ class BroadcastThread extends Thread {
         broadcastFullImage(lastImage);
       }
 
-      if (cropX != null && cropY != null) {
+      if (cropX != 0 && cropY != 0) {
         broadcastImageCrop(lastImage, cropX, cropY);
       }
     }
@@ -55,8 +56,8 @@ class BroadcastThread extends Thread {
   }
 
   void disableCropToBroadcast() {
-    cropX = null;
-    cropY = null;
+    cropX = 0;
+    cropY = 0;
   }
 
   void setCropToBroadcast(int x, int y) {
