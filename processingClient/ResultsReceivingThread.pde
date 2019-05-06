@@ -70,7 +70,7 @@ class ResultsReceivingThread extends Thread {
       }
     }
 
-    if (classification != null) {
+    if (classification != null && classification.size() > 0) {
       faceClassification = classification.getString(0);
       println("got classification! face recognized as: " + faceClassification);
     }
