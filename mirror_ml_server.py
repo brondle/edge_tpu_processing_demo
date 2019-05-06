@@ -73,13 +73,14 @@ def detect_face(engine, sendSocket):
             results = engine.DetectWithImage(
                 image, threshold=0.25, keep_aspect_ratio=True, relative_coord=False, top_k=3)
 
-            logger.debug('time to detect faces: %d\n' %
-                         (time.time() - start_s) * 1000)
+            # logger.debug('time to detect faces: %d\n' %
+            #              (time.time() - start_s) * 1000)
 
             output = list(map(lambda result:
                               {'box': result.bounding_box.flatten().tolist()}, results))
+            logger.debug(output)
 
-            message = json.dumps({'detection': output}) + '|'
+            message = json.dumps({'detection': output})
             sendSocket = send_with_retry(sendSocket, message)
 
 
@@ -100,16 +101,18 @@ def classify_face(engine, sendSocket):
                 logger.info('could not read image')
                 continue
 
+            logger.info('CLASSIFYING')
             # see https://coral.withgoogle.com/docs/reference/edgetpu.classification.engine/
             results = engine.ClassifyWithImage(
                 image, threshold=0.75, top_k=3)
 
+            logger.debug(results)
             logger.debug('time to classify face: %d\n' %
                          (time.time() - start_s) * 1000)
             output = dict(map(lambda result:
                               (face_class_label_ids_to_names[result[0]], result[1]), results))
 
-            message = json.dumps({'classification': output}) + '|'
+            message = json.dumps({'classification': output})
             sendSocket = send_with_retry(sendSocket, message)
 
 
@@ -152,9 +155,9 @@ def start_server():
 if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     consoleHandler = logging.StreamHandler()
-    consoleHandler.setLevel(logging.INFO)
+    consoleHandler.setLevel(logging.DEBUG)
     consoleHandler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        '%(asctime)s - %(levelname)s - %(message)s'))
     logger.addHandler(consoleHandler)
 
     logger.info('running server as main')
