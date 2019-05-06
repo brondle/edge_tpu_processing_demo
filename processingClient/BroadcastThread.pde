@@ -4,7 +4,7 @@ import java.net.*;
 import java.io.*;
 
 class BroadcastThread extends Thread {
-  // This is the port we are sending to
+  // This is the port we are sending images to
   int clientPort = 9100; 
   String clientHost = "127.0.0.1";
   String broadcastHost = getRemoteBroadcastHost();

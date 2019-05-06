@@ -4,8 +4,8 @@ import processing.net.*;
 static final int MAX_DETECTED_OBJECTS = 20;
 
 class ResultsReceivingThread extends Thread {
-  // This is the port we are sending to
-  int port = 9101;   
+  // This is the port we are receiving detection results on
+  int port = 9102;   
   
   byte[] buffer = new byte[65536];
   Client client;

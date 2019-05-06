@@ -51,6 +51,7 @@ void setup() {
   // start threads
   pythonBroadcastThread = new BroadcastThread();
   pythonBroadcastThread.start();
+  println("Opening TCP connection");
   receiverThread = new ResultsReceivingThread(this);
   receiverThread.start();
 
