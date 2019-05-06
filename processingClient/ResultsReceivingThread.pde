@@ -71,9 +71,8 @@ class ResultsReceivingThread extends Thread {
     }
 
     if (classification != null) {
-      println("got classification!");
-      faceClassification = classification.getJSONArray(0).getString(0);
-      println(faceClassification);
+      faceClassification = classification.getString(0);
+      println("got classification! face recognized as: " + faceClassification);
     }
   }
 

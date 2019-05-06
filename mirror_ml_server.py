@@ -106,11 +106,11 @@ def classify_face(engine, sendSocket):
             results = engine.ClassifyWithImage(
                 image, threshold=0.75, top_k=3)
 
-            logger.info(results)
             logger.debug('time to classify face: %d\n' %
                          (time.time() - start_s) * 1000)
-            output = dict(map(lambda result:
-                              (face_class_label_ids_to_names[result[0]], result[1]), results))
+            output = list(
+                map(lambda result: face_class_label_ids_to_names[result[0]], results))
+            logger.info(output)
 
             message = json.dumps({'classification': output})
             sendSocket = send_with_retry(sendSocket, message)
