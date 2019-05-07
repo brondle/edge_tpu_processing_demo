@@ -1,6 +1,8 @@
 import gohai.glvideo.*;
 GLCapture video;
 
+PShader effect;
+
 // CONFIGURATION
 // video capture dimensions
 int captureW = 640;
@@ -22,6 +24,9 @@ boolean drawResults = true;
 
 PGraphics inputImage;
 PGraphics resultsImage;
+
+String label;
+Double confidence;
 
 float aspect = captureW * 1.0 / captureH;
 
@@ -63,6 +68,8 @@ void setup() {
   video = new GLCapture(this, devices[0], captureW, captureH, getFps());
 
   video.start();
+  
+    effect = loadShader("../shaders/pixelate.glsl");
 }
 
 PImage captureAndScaleInputImage() {
@@ -83,7 +90,11 @@ void updateResultsImage() {
   int numDetections = receiverThread.getNumDetections();
   float[][] boxes = receiverThread.getBoxes();
   String[] labels = receiverThread.getLabels();
-
+  Double[] confidences = receiverThread.getConfidences();
+  label = labels[0];
+  confidence = confidences[0];
+  println("labels: ", labels[0]);
+  println("confidences: ", confidences[0]);
   resultsImage.beginDraw();
   resultsImage.clear();
   resultsImage.noFill();
@@ -101,14 +112,15 @@ void updateResultsImage() {
     float x2 = padAndScale(box[2], paddingW, scaleWH);
     float y2 = padAndScale(box[3], paddingH, scaleWH);
 
-    String label = labels[i];
-
     resultsImage.rect(x1, y1, x2 - x1, y2 - y1);
-
     if (label != null) {
-      resultsImage.text(label, x1, y1);
-    }
+     println("label: ", label);
+     println("confidence", confidence);
+     resultsImage.text(label, x1, y1);
+   }
+
   }
+
 
   resultsImage.endDraw();
 }
@@ -138,6 +150,12 @@ void draw() {
       }
     }
     image(resultsImage, 0, 0, outputW, outputH);
+    if (confidence != null && confidence > 0) {
+      //filter(THRESHOLD, 1.0 - confidence.floatValue());
+       int shaderValue = (int)(confidence*10);
+       effect.set("pixels", shaderValue, shaderValue);
+       shader(effect);
+    }
   }
 }
 
