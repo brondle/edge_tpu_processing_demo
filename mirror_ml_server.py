@@ -105,7 +105,7 @@ def classify_face(engine, sendSocket):
             image.save('crop', 'JPEG')
             # see https://coral.withgoogle.com/docs/reference/edgetpu.classification.engine/
             results = engine.ClassifyWithImage(
-                image, threshold=0.75, top_k=3)
+                image, threshold=0.75, top_k=3, resample=Image.BILINEAR)
 
             logger.debug('time to classify face: %d\n' %
                          (time.time() - start_s) * 1000)
